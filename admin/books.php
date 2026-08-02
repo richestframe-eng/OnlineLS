@@ -1,6 +1,27 @@
 <?php
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
+
+$sql = "
+        SELECT
+            b.book_id,
+            b.title,
+            b.isbn,
+            b.available,
+            a.author_name,
+            p.publisher_name,
+            c.category_name
+        FROM book b
+        INNER JOIN author a
+            ON b.author_id = a.author_id
+        INNER JOIN publisher p
+            ON b.publisher_id = p.publisher_id
+        INNER JOIN category c
+            ON b.category_id = c.category_id
+        ORDER BY b.title ASC
+    ";
+
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -48,7 +69,7 @@ require_once '../includes/db.php';
                         </div>
                         <div class="btn">
 
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookModal">
+                            <button id="addBookBtn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBookModal">
                                 <i class="bi bi-plus-lg"></i>
                                 Add New Book
                             </button>
@@ -126,7 +147,7 @@ require_once '../includes/db.php';
                                 <thead class="table-dark">
 
                                     <tr>
-                                        <th>#</th>
+                                        <th>S.N.</th>
                                         <th>Book Title</th>
                                         <th>ISBN</th>
                                         <th>Author</th>
@@ -141,245 +162,76 @@ require_once '../includes/db.php';
 
                                 <tbody>
 
-                                    <tr>
+                                    <?php
 
-                                        <td>1</td>
+                                    $sn = 1;
 
-                                        <td>Database Management System</td>
+                                    while ($book = $result->fetch_assoc()) :
 
-                                        <td>9781234567890</td>
+                                    ?>
 
-                                        <td>Abraham Silberschatz</td>
+                                        <tr>
 
-                                        <td>Database</td>
+                                            <td><?= $sn++ ?></td>
 
-                                        <td>McGraw Hill</td>
+                                            <td><?= htmlspecialchars($book['title']); ?></td>
 
-                                        <td>8</td>
+                                            <td><?= htmlspecialchars($book['isbn']); ?></td>
 
-                                        <td>
-                                            <span class="badge bg-success">
-                                                Available
-                                            </span>
-                                        </td>
+                                            <td><?= htmlspecialchars($book['author_name']); ?></td>
 
-                                        <td class="text-center">
+                                            <td><?= htmlspecialchars($book['category_name']); ?></td>
 
-                                            <button class="btn btn-sm btn-info">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
+                                            <td><?= htmlspecialchars($book['publisher_name']); ?></td>
 
-                                            <button class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
+                                            <td><?= $book['available']; ?></td>
 
-                                            <button class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                            <td>
 
-                                        </td>
+                                                <?php if ($book['available'] > 0) : ?>
 
-                                    </tr>
+                                                    <span class="badge bg-success">
+                                                        Available
+                                                    </span>
 
-                                    <tr>
+                                                <?php else : ?>
 
-                                        <td>2</td>
+                                                    <span class="badge bg-danger">
+                                                        Out of Stock
+                                                    </span>
 
-                                        <td>PHP Programming</td>
+                                                <?php endif; ?>
 
-                                        <td>9781234567891</td>
+                                            </td>
 
-                                        <td>Rasmus Lerdorf</td>
+                                            <td class="text-center">
 
-                                        <td>Programming</td>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-warning edit-book"
+                                                    data-id="<?= $book['book_id']; ?>"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#addBookModal">
 
-                                        <td>Pearson</td>
+                                                    <i class="bi bi-pencil-square"></i>
 
-                                        <td>0</td>
+                                                </button>
 
-                                        <td>
-                                            <span class="badge bg-danger">
-                                                Out of Stock
-                                            </span>
-                                        </td>
+                                                <button
+                                                    type="button"
+                                                    class="btn btn-sm btn-danger delete-book"
+                                                    data-id="<?= $book['book_id']; ?>"
+                                                    data-title="<?= htmlspecialchars($book['title']); ?>">
 
-                                        <td class="text-center">
+                                                    <i class="bi bi-trash"></i>
 
-                                            <button class="btn btn-sm btn-info">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
+                                                </button>
 
-                                            <button class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
+                                            </td>
 
-                                            <button class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+                                        </tr>
 
-                                        </td>
-
-                                    </tr>
-
-                                    <tr>
-
-                                        <td>1</td>
-
-                                        <td>Database Management System</td>
-
-                                        <td>9781234567890</td>
-
-                                        <td>Abraham Silberschatz</td>
-
-                                        <td>Database</td>
-
-                                        <td>McGraw Hill</td>
-
-                                        <td>8</td>
-
-                                        <td>
-                                            <span class="badge bg-success">
-                                                Available
-                                            </span>
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <button class="btn btn-sm btn-info">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-                                    <tr>
-
-                                        <td>2</td>
-
-                                        <td>PHP Programming</td>
-
-                                        <td>9781234567891</td>
-
-                                        <td>Rasmus Lerdorf</td>
-
-                                        <td>Programming</td>
-
-                                        <td>Pearson</td>
-
-                                        <td>0</td>
-
-                                        <td>
-                                            <span class="badge bg-danger">
-                                                Out of Stock
-                                            </span>
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <button class="btn btn-sm btn-info">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-                                    <tr>
-
-                                        <td>1</td>
-
-                                        <td>Database Management System</td>
-
-                                        <td>9781234567890</td>
-
-                                        <td>Abraham Silberschatz</td>
-
-                                        <td>Database</td>
-
-                                        <td>McGraw Hill</td>
-
-                                        <td>8</td>
-
-                                        <td>
-                                            <span class="badge bg-success">
-                                                Available
-                                            </span>
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <button class="btn btn-sm btn-info">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-                                    <tr>
-
-                                        <td>2</td>
-
-                                        <td>PHP Programming</td>
-
-                                        <td>9781234567891</td>
-
-                                        <td>Rasmus Lerdorf</td>
-
-                                        <td>Programming</td>
-
-                                        <td>Pearson</td>
-
-                                        <td>0</td>
-
-                                        <td>
-                                            <span class="badge bg-danger">
-                                                Out of Stock
-                                            </span>
-                                        </td>
-
-                                        <td class="text-center">
-
-                                            <button class="btn btn-sm btn-info">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </button>
-
-                                            <button class="btn btn-sm btn-danger">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
+                                    <?php endwhile; ?>
 
                                 </tbody>
 
@@ -455,7 +307,7 @@ require_once '../includes/db.php';
 
                 <!-- Modal Header -->
                 <div class="modal-header">
-                    <h3 class="modal-title fw-bold">
+                    <h3 id="modalTitle" class="modal-title fw-bold">
                         Add New Book
                     </h3>
 
@@ -469,7 +321,9 @@ require_once '../includes/db.php';
                 <div class="modal-body">
 
                     <!-- Form goes here -->
-                    <form action="" method="POST">
+                    <form id="bookForm" action="save_book.php" method="POST">
+
+                        <input type="hidden" id="bookId" name="book_id">
 
                         <!-- ==== Book Information ==== -->
                         <div class="form-section">
@@ -490,6 +344,7 @@ require_once '../includes/db.php';
                                     <input
                                         type="text"
                                         class="form-control"
+                                        id="title"
                                         name="title"
                                         placeholder="Enter book title"
                                         required>
@@ -504,6 +359,7 @@ require_once '../includes/db.php';
                                     <input
                                         type="text"
                                         class="form-control"
+                                        id="isbn"
                                         name="isbn"
                                         placeholder="Enter ISBN"
                                         required>
@@ -524,6 +380,8 @@ require_once '../includes/db.php';
                                             autocomplete="off"
                                             placeholder="Enter author"
                                             data-id="">
+
+                                        <input type="hidden" name="author_id" id="authorId">
 
                                         <div
                                             class="smart-dropdown"
@@ -549,6 +407,8 @@ require_once '../includes/db.php';
                                             placeholder="Enter category"
                                             data-id="">
 
+                                        <input type="hidden" name="category_id" id="categoryId">
+
                                         <div
                                             class="smart-dropdown"
                                             id="categoryDropdown">
@@ -573,6 +433,8 @@ require_once '../includes/db.php';
                                             placeholder="Enter publisher"
                                             data-id="">
 
+                                        <input type="hidden" name="publisher_id" id="publisherId">
+
                                         <div
                                             class="smart-dropdown"
                                             id="publisherDropdown">
@@ -590,10 +452,11 @@ require_once '../includes/db.php';
                                     <input
                                         type="number"
                                         class="form-control"
+                                        id="publicationYear"
                                         name="publication_year"
                                         placeholder="Enter publication year"
                                         min="1900"
-                                        max="<?php echo date('Y'); ?>">
+                                        max="<?php echo date('Y'); ?>" />
                                 </div>
 
                             </div>
@@ -619,6 +482,7 @@ require_once '../includes/db.php';
                                     <input
                                         type="number"
                                         class="form-control"
+                                        id="total"
                                         name="total_quantity"
                                         placeholder="Enter total quantity"
                                         min="1"
@@ -634,6 +498,7 @@ require_once '../includes/db.php';
                                     <input
                                         type="number"
                                         class="form-control"
+                                        id="available"
                                         name="available_quantity"
                                         placeholder="Enter available quantity"
                                         min="0"
@@ -660,6 +525,7 @@ require_once '../includes/db.php';
 
                                 <textarea
                                     class="form-control"
+                                    id="description"
                                     name="description"
                                     rows="4"
                                     placeholder="Enter book description..."></textarea>
@@ -681,6 +547,7 @@ require_once '../includes/db.php';
                             </button>
 
                             <button
+                                id="saveBookBtn"
                                 type="submit"
                                 name="save_book"
                                 class="btn btn-primary px-3">
@@ -706,7 +573,7 @@ require_once '../includes/db.php';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- ==== JavaScript ==== -->
-    <script src="../assets/js/smart-input.js"></script>
+    <script src="../assets/js/books.js"></script>
 
 </body>
 
