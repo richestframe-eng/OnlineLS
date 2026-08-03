@@ -68,13 +68,6 @@
             </li>
 
             <li>
-                <a href="../admin/return.php">
-                    <i class="bi bi-download"></i>
-                    <span>Return Book</span>
-                </a>
-            </li>
-
-            <li>
                 <a href="../admin/reports.php">
                     <i class="bi bi-bar-chart-fill"></i>
                     <span>Reports</span>

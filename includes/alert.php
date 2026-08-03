@@ -1,4 +1,6 @@
-<?php if (isset($_SESSION["success"])) : ?>
+<?php 
+
+if (isset($_SESSION["success"])) : ?>
 
     <div class="alert alert-success alert-dismissible fade show">
 

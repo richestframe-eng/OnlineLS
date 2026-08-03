@@ -145,7 +145,7 @@
 
                             <thead>
                                 <tr class="table-dark">
-                                    <th>#</th>
+                                    <th>S.N.</th>
                                     <th>Student</th>
                                     <th>Book Title</th>
                                     <th>Issue Date</th>
