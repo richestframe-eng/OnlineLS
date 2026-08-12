@@ -18,8 +18,8 @@
 
         <ul>
 
-            <li class="active">
-                <a href="../admin/dashboard.php" class="active">
+            <li>
+                <a href="../admin/dashboard.php">
                     <i class="bi bi-grid-fill"></i>
                     <span>Dashboard</span>
                 </a>

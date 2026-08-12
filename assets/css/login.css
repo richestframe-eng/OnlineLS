@@ -1,0 +1,83 @@
+*{
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0d47a1 0%, #1565c0 40%, 
+                #1976d2 70%, #42a5f5 100%);
+}
+
+.container .login-card{
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 25px;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+}
+
+.login-card .bi-book-half{
+    padding: 10px 17px;
+    background: linear-gradient(135deg, #1976d2, #42a5f5);
+    border-radius: 15px;
+}
+
+.login-card .text-color{
+    color: rgba(255, 255, 255, 0.68);
+}
+
+.bi-book{
+    color: rgb(163, 225, 250);
+}
+
+.login-card .divider {
+    display: inline-block;
+    width: 60px;
+    height: 1px;
+    background: #b7b7c0;
+}
+
+.form-control i{
+    margin-right: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    color: rgb(25, 179, 245);
+}
+
+.login-card .login-input{
+    width: 100%;
+    border: 0;
+    outline: 0;
+    color: #333;
+    letter-spacing: 1.5px;
+    transition: transform 0.2s ease;
+}
+
+.login-card .login-input~.form-control:focus-within{
+    transform: translateY(-3px);
+}
+
+.login-card .login-btn{ 
+    background: linear-gradient(90deg, #2284d4, #65b1f0);
+    outline: 0;
+    border: 0;
+    font-size: 18px;
+    font-weight: 600;
+    box-shadow: 3px 2px 16px rgba(6, 71, 136, 0.459);
+    transition: transform 0.2s ease; 
+}
+
+.login-card .d-grid button:hover{
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba( 0, 0, 0, 0.25);
+}
+
+.d-flex.wel-msg p{
+    margin-top: 12px;
+}
+
+.bi-shield-check{
+    color: rgb(25, 179, 245);
+    font-weight: bolder;
+}

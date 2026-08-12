@@ -9,15 +9,15 @@ $error = "";
 // Check if login form is submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Read and trim user input
-    $loginID = trim($_POST['login_id']);
-    $password = trim($_POST['password']);
+    $loginID = trim($_POST['login_id'] ?? '');
+    $password = trim($_POST['password'] ?? '');
 
     // Validate empty fields
     if (empty($loginID) || empty($password)) {
-        $error = "Please fill in all fields.";
+        $error = "Please enter your username/student ID/email and password.";
     } else {
         // Search admin by username or email
-        $sql = "SELECT * FROM admin WHERE username = ? OR email = ?";
+        $sql = "SELECT admin_id, username, email, password FROM admin WHERE username = ? OR email = ? LIMIT 1";
 
         // Prepare SQL statement
         $stmt = $conn->prepare($sql);
@@ -38,14 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Check if admin exists
         if ($result->num_rows == 1) {
             // Fetch the admin record
-            $row = $result->fetch_assoc();
+            $admin = $result->fetch_assoc();
 
             // Verify the password using password_verify
-            if (password_verify($password, $row['password'])) {
+            if (password_verify($password, $admin['password'])) {
                 // Set session variables
-                $_SESSION['admin_id'] = $row['admin_id'];
-                $_SESSION['username'] = $row['username'];
-                $_SESSION['email'] = $row['email'];
+                $_SESSION['admin_id'] = $admin['admin_id'];
+                $_SESSION['username'] = $admin['username'];
+                $_SESSION['email'] = $admin['email'];
 
                 // Redirect to admin dashboard
                 header("Location: admin/dashboard.php");
@@ -56,6 +56,42 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else {
             $error = "Invalid Login ID or Password.";
         }
+
+        $stmt->close();
+
+        // Search student by student ID or email
+        $stmt = $conn->prepare("
+            SELECT student_id, full_name, email, password
+            FROM student
+            WHERE student_id = ? OR email = ?
+            LIMIT 1
+        ");
+
+        $stmt->bind_param("ss", $loginID, $loginID);
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+
+            $student = $result->fetch_assoc();
+
+            if (password_verify($password, $student['password'])) {
+
+                $_SESSION['student_id'] = $student['student_id'];
+                $_SESSION['student_name'] = $student['full_name'];
+                $_SESSION['student_email'] = $student['email'];
+
+                header("Location: student/dashboard.php");
+                exit();
+            }
+        }
+
+        $stmt->close();
+
+        // Invalid Login
+        $error = "Invalid login credentials.";
+
     }
 }
 ?>
@@ -75,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <!-- ---------- EXTERNAL CSS ---------- -->
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/login.css">
 </head>
 
 <body>

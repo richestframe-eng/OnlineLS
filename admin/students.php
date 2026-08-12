@@ -1,5 +1,6 @@
 <?php
 require_once '../includes/auth.php';
+requireAdmin();
 require_once '../includes/db.php';
 
 $sql = "SELECT * FROM student ORDER BY full_name ASC";
@@ -23,7 +24,7 @@ $result = $conn->query($sql);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <!-- Admin CSS -->
-    <link rel="stylesheet" href="../assets/css/admin.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
 <body>
@@ -573,6 +574,7 @@ $result = $conn->query($sql);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- ==== JavaScript ==== -->
+     <script src="../assets/js/script.js"></script>
     <script src="../assets/js/students.js"></script>
 
 </body>

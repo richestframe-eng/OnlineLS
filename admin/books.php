@@ -1,27 +1,213 @@
 <?php
 require_once '../includes/auth.php';
+requireAdmin();
 require_once '../includes/db.php';
 
+// =========================================
+// Search & Filters
+// =========================================
+$search    = trim($_GET['search'] ?? '');
+$category  = $_GET['category'] ?? '';
+$publisher = $_GET['publisher'] ?? '';
+
+// =========================================
+// Pagination
+// =========================================
+$limit = 10;
+
+$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+
+if ($page < 1) {
+    $page = 1;
+}
+
+$start = ($page - 1) * $limit;
+
+// =========================================
+// Main Query
+// =========================================
 $sql = "
-        SELECT
-            b.book_id,
-            b.title,
-            b.isbn,
-            b.available,
-            a.author_name,
-            p.publisher_name,
-            c.category_name
-        FROM book b
-        INNER JOIN author a
-            ON b.author_id = a.author_id
-        INNER JOIN publisher p
-            ON b.publisher_id = p.publisher_id
-        INNER JOIN category c
-            ON b.category_id = c.category_id
-        ORDER BY b.title ASC
+SELECT
+    b.book_id,
+    b.title,
+    b.isbn,
+    b.available,
+    a.author_name,
+    p.publisher_name,
+    c.category_name
+FROM book b
+INNER JOIN author a
+    ON b.author_id = a.author_id
+INNER JOIN publisher p
+    ON b.publisher_id = p.publisher_id
+INNER JOIN category c
+    ON b.category_id = c.category_id
+WHERE 1
+";
+
+$params = [];
+$types  = "";
+
+// =========================================
+// Search
+// =========================================
+if (!empty($search)) {
+
+    $sql .= "
+        AND
+        (
+            b.title LIKE ?
+            OR b.isbn LIKE ?
+            OR a.author_name LIKE ?
+        )
     ";
 
-$result = $conn->query($sql);
+    $keyword = "%$search%";
+
+    $params[] = $keyword;
+    $params[] = $keyword;
+    $params[] = $keyword;
+
+    $types .= "sss";
+}
+
+// =========================================
+// Category
+// =========================================
+if (!empty($category)) {
+
+    $sql .= " AND b.category_id = ?";
+
+    $params[] = $category;
+
+    $types .= "i";
+}
+
+// =========================================
+// Publisher
+// =========================================
+if (!empty($publisher)) {
+
+    $sql .= " AND b.publisher_id = ?";
+
+    $params[] = $publisher;
+
+    $types .= "i";
+}
+
+// =========================================
+// Count Query
+// =========================================
+$countSql = "
+SELECT COUNT(*) AS total
+FROM book b
+INNER JOIN author a
+    ON b.author_id = a.author_id
+INNER JOIN publisher p
+    ON b.publisher_id = p.publisher_id
+INNER JOIN category c
+    ON b.category_id = c.category_id
+WHERE 1
+";
+
+$countParams = [];
+$countTypes  = "";
+
+// Search
+if (!empty($search)) {
+
+    $countSql .= "
+        AND
+        (
+            b.title LIKE ?
+            OR b.isbn LIKE ?
+            OR a.author_name LIKE ?
+        )
+    ";
+
+    $keyword = "%$search%";
+
+    $countParams[] = $keyword;
+    $countParams[] = $keyword;
+    $countParams[] = $keyword;
+
+    $countTypes .= "sss";
+}
+
+// Category
+if (!empty($category)) {
+
+    $countSql .= " AND b.category_id = ?";
+
+    $countParams[] = $category;
+
+    $countTypes .= "i";
+}
+
+// Publisher
+if (!empty($publisher)) {
+
+    $countSql .= " AND b.publisher_id = ?";
+
+    $countParams[] = $publisher;
+
+    $countTypes .= "i";
+}
+
+$countStmt = $conn->prepare($countSql);
+
+if (!empty($countParams)) {
+
+    $countStmt->bind_param($countTypes, ...$countParams);
+
+}
+
+$countStmt->execute();
+
+$totalBooks = $countStmt
+    ->get_result()
+    ->fetch_assoc()['total'];
+
+$totalPages = ceil($totalBooks / $limit);
+
+// =========================================
+// Main Query Pagination
+// =========================================
+$sql .= " ORDER BY b.title ASC LIMIT ?, ?";
+
+$params[] = $start;
+$params[] = $limit;
+
+$types .= "ii";
+
+// =========================================
+// Execute Main Query
+// =========================================
+$stmt = $conn->prepare($sql);
+
+$stmt->bind_param($types, ...$params);
+
+$stmt->execute();
+
+$result = $stmt->get_result();
+
+// =========================================
+// Load Categories
+// =========================================
+$categoryResult = $conn->query("
+    SELECT category_id, category_name
+    FROM category
+    ORDER BY category_name ASC
+");
+
+// =========================================
+// Load Publishers
+// =========================================
+$publisherResult = $conn->query("
+    SELECT publisher_id, publisher_name
+    FROM publisher
+    ORDER BY publisher_name ASC
+");
 ?>
 
 <!DOCTYPE html>
@@ -40,7 +226,7 @@ $result = $conn->query($sql);
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <!-- Admin CSS -->
-    <link rel="stylesheet" href="../assets/css/admin.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
 <body>
@@ -78,49 +264,89 @@ $result = $conn->query($sql);
                     </div>
 
                     <!-- ===== Filter Card ===== -->
-                    <div class="filter-card">
+                    <form method="GET" action="books.php" class="filter-card">
 
                         <div class="row g-3 align-items-end">
 
-                            <div class="col-lg-5">
+                            <!-- Search -->
+                            <div class="col-lg-4">
+
                                 <div class="input-group">
+
                                     <span class="input-group-text">
                                         <i class="bi bi-search"></i>
                                     </span>
+
                                     <input
                                         type="text"
                                         class="form-control"
-                                        placeholder="Search by title, ISBN or author">
+                                        name="search"
+                                        placeholder="Search by title, ISBN or author"
+                                        value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+
                                 </div>
+
                             </div>
 
+                            <!-- Category -->
                             <div class="col-lg-3">
-                                <select class="form-select">
-                                    <option selected>All Categories</option>
-                                    <option>Programming</option>
-                                    <option>Database</option>
-                                    <option>Networking</option>
+                                <select class="form-select col-lg-3" name="category">
+
+                                    <option value="">All Categories</option>
+
+                                    <?php while ($cat = $categoryResult->fetch_assoc()) : ?>
+
+                                        <option
+                                            value="<?= $cat['category_id']; ?>"
+                                            <?= ($category == $cat['category_id']) ? 'selected' : ''; ?>>
+
+                                            <?= htmlspecialchars($cat['category_name']); ?>
+
+                                        </option>
+
+                                    <?php endwhile; ?>
+
                                 </select>
                             </div>
 
+                            <!-- Publisher -->
                             <div class="col-lg-3">
-                                <select class="form-select">
-                                    <option selected>All Publishers</option>
-                                    <option>McGraw Hill</option>
-                                    <option>Pearson</option>
-                                    <option>Oxford</option>
+                                <select class="form-select col-lg-3" name="publisher">
+
+                                    <option value="">All Publishers</option>
+
+                                    <?php while ($pub = $publisherResult->fetch_assoc()) : ?>
+
+                                        <option
+                                            value="<?= $pub['publisher_id']; ?>"
+                                            <?= ($publisher == $pub['publisher_id']) ? 'selected' : ''; ?>>
+
+                                            <?= htmlspecialchars($pub['publisher_name']); ?>
+
+                                        </option>
+
+                                    <?php endwhile; ?>
+
                                 </select>
                             </div>
 
                             <div class="col-lg-1 d-grid">
+
                                 <button class="btn btn-primary">
                                     <i class="bi bi-funnel-fill"></i>
                                 </button>
+
+                            </div>
+
+                            <div class="col-lg-1 d-grid">
+                                <a href="books.php" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                </a>
                             </div>
 
                         </div>
 
-                    </div>
+                    </form>
 
                     <!-- ===== Books Table ===== -->
                     <div class="table-card">
@@ -134,7 +360,7 @@ $result = $conn->query($sql);
                                 </h5>
 
                                 <p class="text-dark">
-                                    Total Books : 150
+                                    Total Books : <?= $result->num_rows ?>
                                 </p>
                             </div>
 
@@ -246,40 +472,42 @@ $result = $conn->query($sql);
 
                         <div class="d-flex justify-content-between align-items-center flex-wrap">
 
-                            <small class="text-muted">
-                                Showing 1 to 10 of 150 books
-                            </small>
+                            <p class="text-dark">
+                                Showing
+                                <?= $totalBooks == 0 ? 0 : $start + 1; ?>
+                                to
+                                <?= min($start + $limit, $totalBooks); ?>
+                                of
+                                <?= $totalBooks; ?>
+                                books
+                            </p>
 
                             <nav>
 
                                 <ul class="pagination mb-0">
 
-                                    <li class="page-item disabled">
-                                        <a class="page-link" href="#">
+                                    <!-- Previous -->
+                                    <li class="page-item <?= ($page <= 1) ? 'disabled' : ''; ?>">
+                                        <a class="page-link"
+                                        href="?page=<?= $page - 1; ?>&search=<?= urlencode($search); ?>&category=<?= $category; ?>&publisher=<?= $publisher; ?>">
                                             Previous
                                         </a>
                                     </li>
 
-                                    <li class="page-item active">
-                                        <a class="page-link" href="#">
-                                            1
-                                        </a>
-                                    </li>
+                                    <!-- Page Numbers -->
+                                    <?php for ($i = 1; $i <= $totalPages; $i++) : ?>
+                                        <li class="page-item <?= ($page == $i) ? 'active' : ''; ?>">
+                                            <a class="page-link"
+                                            href="?page=<?= $i; ?>&search=<?= urlencode($search); ?>&category=<?= $category; ?>&publisher=<?= $publisher; ?>">
+                                                <?= $i; ?>
+                                            </a>
+                                        </li>
+                                    <?php endfor; ?>
 
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">
-                                            2
-                                        </a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">
-                                            3
-                                        </a>
-                                    </li>
-
-                                    <li class="page-item">
-                                        <a class="page-link" href="#">
+                                    <!-- Next -->
+                                    <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                                        <a class="page-link"
+                                        href="?page=<?= $page + 1; ?>&search=<?= urlencode($search); ?>&category=<?= $category; ?>&publisher=<?= $publisher; ?>">
                                             Next
                                         </a>
                                     </li>
@@ -573,6 +801,7 @@ $result = $conn->query($sql);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- ==== JavaScript ==== -->
+     <script src="../assets/js/script.js"></script>
     <script src="../assets/js/books.js"></script>
 
 </body>

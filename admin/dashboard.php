@@ -1,6 +1,75 @@
 <?php
-    require_once '../includes/auth.php';
-    require_once '../includes/db.php';
+require_once '../includes/auth.php';
+requireAdmin();
+require_once '../includes/db.php';
+
+// =========================================
+// Dashboard Statistics
+// =========================================
+
+// Total Books
+$totalBooks = $conn->query("
+        SELECT COUNT(*) AS total
+        FROM book
+    ")->fetch_assoc()["total"];
+
+// Total Students
+$totalStudents = $conn->query("
+        SELECT COUNT(*) AS total
+        FROM student
+    ")->fetch_assoc()["total"];
+
+// Issued Books
+$totalIssued = $conn->query("
+        SELECT COUNT(*) AS total
+        FROM issue_return
+        WHERE status = 'Issued'
+    ")->fetch_assoc()["total"];
+
+// Available Books
+$totalAvailable = $conn->query("
+        SELECT SUM(available) AS total
+        FROM book
+    ")->fetch_assoc()["total"];
+
+// Total Authors
+$totalAuthors = $conn->query("
+        SELECT COUNT(*) AS total
+        FROM author
+    ")->fetch_assoc()["total"];
+
+// Total Publishers
+$totalPublishers = $conn->query("
+        SELECT COUNT(*) AS total
+        FROM publisher
+    ")->fetch_assoc()["total"];
+
+// Total Categories
+$totalCategories = $conn->query("
+        SELECT COUNT(*) AS total
+        FROM category
+    ")->fetch_assoc()["total"];
+
+// =========================================
+// Recently Issued Books
+// =========================================
+$recentBooks = $conn->query("
+        SELECT
+            s.full_name,
+            b.title,
+            ir.issue_date,
+            ir.due_date,
+            ir.status
+        FROM issue_return ir
+        INNER JOIN student s
+            ON ir.student_id = s.student_id
+        INNER JOIN book b
+            ON ir.book_id = b.book_id
+        WHERE ir.status = 'Issued'
+        ORDER BY ir.issue_date DESC
+        LIMIT 5
+    ");
+
 ?>
 
 <!DOCTYPE html>
@@ -19,7 +88,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
 
     <!-- Admin CSS -->
-    <link rel="stylesheet" href="../assets/css/admin.css">
+    <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
 <body>
@@ -61,7 +130,7 @@
                             <i class="bi bi-book-half bg-primary"></i>
                             <div class="text-card">
                                 <h3>Total Books</h3>
-                                <p>150</p>
+                                <p><?= $totalBooks; ?></p>
                             </div>
                         </div>
                         <div class="btn-card">
@@ -77,7 +146,7 @@
                             <i class="bi bi-people-fill bg-success"></i>
                             <div class="text-card">
                                 <h3>Total Students</h3>
-                                <p>80</p>
+                                <p><?= $totalStudents; ?></p>
                             </div>
                         </div>
                         <div class="btn-card">
@@ -93,7 +162,7 @@
                             <i class="bi bi-journal-bookmark-fill bg-danger"></i>
                             <div class="text-card">
                                 <h3>Issued Books</h3>
-                                <p>30</p>
+                                <p><?= $totalIssued; ?></p>
                             </div>
                         </div>
                         <div class="btn-card">
@@ -109,12 +178,69 @@
                             <i class="bi bi-clipboard-data-fill bg-dark"></i>
                             <div class="text-card">
                                 <h3>Available Books</h3>
-                                <p>120</p>
+                                <p><?= $totalAvailable; ?></p>
                             </div>
                         </div>
                         <div class="btn-card">
                             <a href="books.php">
                                 <span>View available books</span>
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                </section>
+
+                <h5 class="section-title mt-4 mb-3">
+                    <i class="bi bi-collection-fill"></i>
+                    Library Information
+                </h5>
+
+                <section class="stats-container info-stats">
+
+                    <div class="stat-card">
+                        <div class="details-card">
+                            <i class="bi bi-pencil-fill bg-warning"></i>
+                            <div class="text-card">
+                                <h3>Total Authors</h3>
+                                <p><?= $totalAuthors; ?></p>
+                            </div>
+                        </div>
+                        <div class="btn-card">
+                            <a href="authors.php">
+                                <span>View all authors</span>
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="details-card">
+                            <i class="bi bi-building-fill bg-info"></i>
+                            <div class="text-card">
+                                <h3>Total Publishers</h3>
+                                <p><?= $totalPublishers; ?></p>
+                            </div>
+                        </div>
+                        <div class="btn-card">
+                            <a href="publishers.php">
+                                <span>View all publishers</span>
+                                <i class="bi bi-arrow-right-short"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="details-card">
+                            <i class="bi bi-folder-fill bg-secondary"></i>
+                            <div class="text-card">
+                                <h3>Total Categories</h3>
+                                <p><?= $totalCategories; ?></p>
+                            </div>
+                        </div>
+                        <div class="btn-card">
+                            <a href="categories.php">
+                                <span>View all categories</span>
                                 <i class="bi bi-arrow-right-short"></i>
                             </a>
                         </div>
@@ -156,70 +282,47 @@
 
                             <tbody>
 
-                                <tr>
-                                    <td>1</td>
-                                    <td>Ram Sharma</td>
-                                    <td>Database Management System</td>
-                                    <td>15 May 2025</td>
-                                    <td>29 May 2025</td>
-                                    <td>
-                                        <span class="status-badge issued">
-                                            Issued
-                                        </span>
-                                    </td>
-                                </tr>
+                                <?php
+                                $sn = 1;
 
-                                <tr>
-                                    <td>2</td>
-                                    <td>Sita Thapa</td>
-                                    <td>PHP Programming</td>
-                                    <td>14 May 2025</td>
-                                    <td>28 May 2025</td>
-                                    <td>
-                                        <span class="status-badge issued">
-                                            Issued
-                                        </span>
-                                    </td>
-                                </tr>
+                                while ($row = $recentBooks->fetch_assoc()) :
+                                ?>
 
-                                <tr>
-                                    <td>3</td>
-                                    <td>Hari Poudel</td>
-                                    <td>Operating System Concepts</td>
-                                    <td>13 May 2025</td>
-                                    <td>27 May 2025</td>
-                                    <td>
-                                        <span class="status-badge issued">
-                                            Issued
-                                        </span>
-                                    </td>
-                                </tr>
+                                    <tr>
 
-                                <tr>
-                                    <td>4</td>
-                                    <td>Anita Karki</td>
-                                    <td>Web Technologies</td>
-                                    <td>12 May 2025</td>
-                                    <td>26 May 2025</td>
-                                    <td>
-                                        <span class="status-badge issued">
-                                            Issued
-                                        </span>
-                                    </td>
-                                </tr>
+                                        <td><?= $sn++; ?></td>
 
-                                <tr>
-                                    <td>5</td>
-                                    <td>Rohit Adhikari</td>
-                                    <td>Data Structures</td>
-                                    <td>11 May 2025</td>
-                                    <td>25 May 2025</td>
-                                    <td>
-                                        <span class="status-badge issued">
-                                            Issued
-                                        </span>
-                                    </td>
-                                </tr>
+                                        <td><?= htmlspecialchars($row["full_name"]); ?></td>
+
+                                        <td><?= htmlspecialchars($row["title"]); ?></td>
+
+                                        <td><?= htmlspecialchars($row["issue_date"]); ?></td>
+
+                                        <td><?= htmlspecialchars($row["due_date"]); ?></td>
+
+                                        <td>
+
+                                            <span class="status-badge issued">
+                                                <?= htmlspecialchars($row["status"]); ?>
+                                            </span>
+
+                                        </td>
+
+                                    </tr>
+
+                                <?php endwhile; ?>
+
+                                <?php if ($sn == 1) : ?>
+
+                                    <tr>
+
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            No issued books found.
+                                        </td>
+
+                                    </tr>
+
+                                <?php endif; ?>
 
                             </tbody>
 
@@ -234,7 +337,10 @@
     </div>
 
     <!-- ==== Bootstrap JS ==== -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ==== External JS ====  -->
+    <script src="../assets/js/script.js"></script>
 </body>
 
 </html>

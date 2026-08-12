@@ -41,31 +41,83 @@ function setupAutocomplete(inputId, dropdownId, url) {
         dropdown.innerHTML = "";
         selectedIndex = -1;
 
+        let addClass = "";
+        let addText = "";
+
+        if (input.id === "authorSearch") {
+            addClass = "add-author";
+            addText = "Author";
+        }
+        else if (input.id === "publisherSearch") {
+            addClass = "add-publisher";
+            addText = "Publisher";
+        }
+        else {
+            addClass = "add-category";
+            addText = "Category";
+        }
+
+        dropdown.innerHTML = "";
+
         if (results.length === 0) {
 
             dropdown.innerHTML = `
-                <div class="dropdown-item text-muted">No author found</div>
-                <div class="dropdown-item text-primary add-author">
-                    <i class="bi bi-plus-circle"></i> Add New Author
+                <div class="dropdown-item text-muted">
+                    No ${addText.toLowerCase()} found
                 </div>
             `;
 
-            return;
+        }
+        else {
+
+            results.forEach(result => {
+
+                const id = Object.values(result)[0];
+                const name = Object.values(result)[1];
+
+                dropdown.innerHTML += `
+            <div class="dropdown-item autocomplete-item"
+                 data-id="${id}">
+                ${name}
+            </div>
+        `;
+
+            });
+
         }
 
-        results.forEach(result => {
+        if (results.length === 0) {
 
-            const id = Object.values(result)[0];
-            const name = Object.values(result)[1];
+            dropdown.innerHTML = `
+                <div class="dropdown-item text-muted">
+                    No ${addText.toLowerCase()} found
+                </div>
 
-            dropdown.innerHTML += `
-                <div class="dropdown-item autocomplete-item"
-                data-id="${id}">
-                ${name}
+                <div class="dropdown-item ${addClass}">
+                    <i class="bi bi-plus-circle"></i>
+                    Add New ${addText}
                 </div>
             `;
 
-        });
+        } else {
+
+            dropdown.innerHTML = "";
+
+            results.forEach(result => {
+
+                const id = Object.values(result)[0];
+                const name = Object.values(result)[1];
+
+                dropdown.innerHTML += `
+                    <div class="dropdown-item autocomplete-item"
+                        data-id="${id}">
+                        ${name}
+                    </div>
+                `;
+
+            });
+
+        }
 
     });
 
@@ -140,6 +192,108 @@ function setupAutocomplete(inputId, dropdownId, url) {
 
     dropdown.addEventListener("click", function (e) {
 
+        // ==========================
+        // Add New Author
+        // ==========================
+        if (e.target.closest(".add-author")) {
+            const name = input.value.trim();
+
+            if (name === "") {
+                alert("Enter author name first.");
+                return;
+            }
+
+            fetch("../assets/ajax/add_author.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "author_name=" + encodeURIComponent(name)
+            }).then(res => res.json()).then(data => {
+
+                if (data.success) {
+                    input.value = data.name;
+                    input.dataset.id = data.id;
+                    document.getElementById("authorId").value = data.id;
+                    dropdown.innerHTML = "";
+                } else {
+                    alert(data.message);
+                }
+
+            });
+
+            return;
+        }
+
+        // ==========================
+        // Add New Publisher
+        // ==========================
+        if (e.target.closest(".add-publisher")) {
+            const name = input.value.trim();
+
+            if (name === "") {
+                alert("Enter publisher name first.");
+                return;
+            }
+
+            fetch("../assets/ajax/add_publisher.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "publisher_name=" + encodeURIComponent(name)
+            }).then(res => res.json()).then(data => {
+
+                if (data.success) {
+                    input.value = data.name;
+                    input.dataset.id = data.id;
+                    document.getElementById("publisherId").value = data.id;
+                    dropdown.innerHTML = "";
+                } else {
+                    alert(data.message);
+                }
+
+            });
+
+            return;
+        }
+
+        // ==========================
+        // Add New Category
+        // ==========================
+        if (e.target.closest(".add-category")) {
+            const name = input.value.trim();
+
+            if (name === "") {
+                alert("Enter category name first.");
+                return;
+            }
+
+            fetch("../assets/ajax/add_category.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: "category_name=" + encodeURIComponent(name)
+            }).then(res => res.json()).then(data => {
+
+                if (data.success) {
+                    input.value = data.name;
+                    input.dataset.id = data.id;
+                    document.getElementById("categoryId").value = data.id;
+                    dropdown.innerHTML = "";
+                } else {
+                    alert(data.message);
+                }
+
+            });
+
+            return;
+        }
+
+        // ==========================
+        // Existing autocomplete
+        // ==========================
         const item = e.target.closest(".autocomplete-item");
 
         if (!item) return;
@@ -150,11 +304,9 @@ function setupAutocomplete(inputId, dropdownId, url) {
         if (input.id === "authorSearch") {
             document.getElementById("authorId").value = item.dataset.id;
         }
-
         else if (input.id === "publisherSearch") {
             document.getElementById("publisherId").value = item.dataset.id;
         }
-
         else if (input.id === "categorySearch") {
             document.getElementById("categoryId").value = item.dataset.id;
         }
