@@ -1,3 +1,29 @@
+<?php
+
+if (isset($_SESSION['admin_id'])) {
+
+    $userType = 'admin';
+    $userName = 'Admin';
+
+} elseif (isset($_SESSION['student_id'])) {
+
+    $userType = 'student';
+
+    // Student name should already be available from the page/session.
+    $userName = $_SESSION['student_name'] ?? 'Student';
+
+} else {
+
+    $userType = '';
+    $userName = '';
+
+}
+
+// Page title
+$pageTitle = $pageTitle ?? 'Dashboard';
+
+?>
+
 <header class="admin-header">
 
     <!-- Left Side -->
@@ -8,7 +34,7 @@
         </button>
 
         <h3 class="page-title">
-            Dashboard
+            <?= htmlspecialchars($pageTitle); ?>
         </h3>
 
     </div>
@@ -21,10 +47,10 @@
             <i class="bi bi-bell"></i>
         </button>
 
-        <!-- -- Vertical Line -- -->
+        <!-- Vertical Line -->
         <span class="vertical-line"></span>
 
-        <!-- Admin Dropdown -->
+        <!-- User Dropdown -->
         <div class="dropdown">
 
             <button class="btn dropdown-toggle admin-btn"
@@ -34,27 +60,30 @@
                 <div>
                     <i class="admin-logo"></i>
                 </div>
-                <span>Admin</span>
+
+                <span>
+                    <?= htmlspecialchars($userName); ?>
+                </span>
 
             </button>
 
             <ul class="dropdown-menu dropdown-menu-end">
 
                 <li>
-                    <a class="dropdown-item" href="#">
+                    <a class="dropdown-item"
+                       href="<?= $userType === 'student'
+                           ? '../student/profile.php'
+                           : '../admin/profile.php'; ?>">
+
                         <i class="bi bi-person"></i>
                         Profile
+
                     </a>
                 </li>
 
                 <li>
-                    <a class="dropdown-item" href="#">
-                        <i class="bi bi-gear"></i>
-                        Settings
-                    </a>
+                    <hr class="dropdown-divider">
                 </li>
-
-                <li><hr class="dropdown-divider"></li>
 
                 <li>
                     <a class="dropdown-item text-danger"
