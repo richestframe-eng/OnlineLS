@@ -1,7 +1,16 @@
 <?php
 
+require_once '../includes/notification.php';
+
 if (isset($_SESSION['admin_id'])) {
     $userType = 'admin';
+
+    $adminNotificationCount =
+        getUnreadNotificationCount(
+            $conn,
+            'Admin',
+            $_SESSION['admin_id']
+        );
 } elseif (isset($_SESSION['student_id'])) {
     $userType = 'student';
 } else {
@@ -32,7 +41,6 @@ if (isset($_SESSION['admin_id'])) {
             <?php if ($userType === 'admin'): ?>
 
                 <!-- ===== Admin Menu ===== -->
-
                 <li>
                     <a href="../admin/dashboard.php">
                         <i class="bi bi-grid-fill"></i>
@@ -86,6 +94,11 @@ if (isset($_SESSION['admin_id'])) {
                     <a href="../admin/requests.php">
                         <i class="bi bi-bookmark-check-fill"></i>
                         <span>Book Requests</span>
+                        <?php if ($adminNotificationCount > 0): ?>
+                            <span id="sidebar-notification-badge" class="badge bg-danger ms-auto">
+                                <?= $adminNotificationCount; ?>
+                            </span>
+                        <?php endif; ?>
                     </a>
                 </li>
 

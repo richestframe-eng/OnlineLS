@@ -2,11 +2,14 @@
 
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
+require_once '../includes/notification.php';
 
 requireStudent();
 
 $studentId = $_SESSION['student_id'];
 $studentName = $_SESSION['student_name'];
+
+sendDueDateReminders($conn, $studentId);
 
 // ==========================
 // Student Statistics

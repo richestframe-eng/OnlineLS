@@ -2,13 +2,23 @@
 
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
+require_once '../includes/notification.php';
 
 requireAdmin();
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['mark_request_notifications_read'])) {
 
-// ==========================
-// Handle Request Status
-// ==========================
+    markNotificationsRead(
+        $conn,
+        'Admin',
+        $_SESSION['admin_id']
+    );
+
+    exit;
+}
+
+$pageTitle = 'Book Requests';
 
 if (
     isset($_GET['action']) &&
@@ -19,45 +29,184 @@ if (
     $requestId = (int) $_GET['request_id'];
     $action = $_GET['action'];
 
+    // ==========================
+    // APPROVE
+    // ==========================
+
     if ($action === 'approve') {
 
-        $status = 'Approved';
+        $conn->begin_transaction();
+
+        try {
+
+            // Get request details
+            $stmt = $conn->prepare("
+                SELECT student_id, book_id
+                FROM request
+                WHERE request_id = ?
+                AND status = 'Pending'
+            ");
+
+            $stmt->bind_param("i", $requestId);
+            $stmt->execute();
+
+            $request = $stmt->get_result()->fetch_assoc();
+
+            if (!$request) {
+                throw new Exception("Request not found.");
+            }
+
+            $studentId = $request['student_id'];
+            $bookId = $request['book_id'];
+
+
+            // Check availability
+            $stmt = $conn->prepare("
+                SELECT available
+                FROM book
+                WHERE book_id = ?
+            ");
+
+            $stmt->bind_param("i", $bookId);
+            $stmt->execute();
+
+            $book = $stmt->get_result()->fetch_assoc();
+
+            if (!$book || $book['available'] <= 0) {
+                throw new Exception("Book is not available.");
+            }
+
+
+            // Approve request
+            $stmt = $conn->prepare("
+                UPDATE request
+                SET status = 'Approved'
+                WHERE request_id = ?
+            ");
+
+            $stmt->bind_param("i", $requestId);
+            $stmt->execute();
+
+
+            // Create issue transaction
+            $stmt = $conn->prepare("
+                INSERT INTO issue_return
+                (
+                    student_id,
+                    book_id,
+                    issue_date,
+                    due_date,
+                    status
+                )
+                VALUES
+                (
+                    ?,
+                    ?,
+                    CURDATE(),
+                    DATE_ADD(CURDATE(), INTERVAL 14 DAY),
+                    'Issued'
+                )
+            ");
+
+            $stmt->bind_param("ii", $studentId, $bookId);
+            $stmt->execute();
+
+
+            // Decrease available copies ONCE
+            $stmt = $conn->prepare("
+                UPDATE book
+                SET available = available - 1
+                WHERE book_id = ?
+            ");
+
+            $stmt->bind_param("i", $bookId);
+            $stmt->execute();
+
+
+            // Student notification
+            addNotification(
+                $conn,
+                'Student',
+                $studentId,
+                'Your book request has been approved.'
+            );
+
+
+            $conn->commit();
+
+            header("Location: requests.php?success=approved");
+            exit();
+
+        } catch (Exception $e) {
+
+            $conn->rollback();
+
+            header(
+                "Location: requests.php?error="
+                . urlencode($e->getMessage())
+            );
+
+            exit();
+        }
+
+
+    // ==========================
+    // REJECT
+    // ==========================
 
     } elseif ($action === 'reject') {
 
-        $status = 'Rejected';
+        // Get student ID first
+        $stmt = $conn->prepare("
+            SELECT student_id
+            FROM request
+            WHERE request_id = ?
+            AND status = 'Pending'
+        ");
 
-    } else {
+        $stmt->bind_param("i", $requestId);
+        $stmt->execute();
 
-        header("Location: requests.php");
+        $request = $stmt->get_result()->fetch_assoc();
+
+        if (!$request) {
+            header("Location: requests.php?error=Request+not+found");
+            exit();
+        }
+
+        $studentId = $request['student_id'];
+
+
+        // Reject request
+        $stmt = $conn->prepare("
+            UPDATE request
+            SET status = 'Rejected'
+            WHERE request_id = ?
+        ");
+
+        $stmt->bind_param("i", $requestId);
+        $stmt->execute();
+
+
+        // Student notification
+        addNotification(
+            $conn,
+            'Student',
+            $studentId,
+            'Your book request has been rejected.'
+        );
+
+        addNotification(
+            $conn,
+            'Admin',
+            1,
+            'New book request received.'
+        );
+
+        header("Location: requests.php?success=rejected");
         exit();
-
     }
-
-
-    $stmt = $conn->prepare("
-        UPDATE request
-        SET status = ?
-        WHERE request_id = ?
-          AND status = 'Pending'
-    ");
-
-    $stmt->bind_param(
-        "si",
-        $status,
-        $requestId
-    );
-
-    $stmt->execute();
-
-    header("Location: requests.php");
-    exit();
 }
-
-
-// ==========================
-// Fetch Requests
-// ==========================
 
 $stmt = $conn->prepare("
     SELECT
@@ -86,7 +235,6 @@ $stmt = $conn->prepare("
 $stmt->execute();
 
 $requests = $stmt->get_result();
-
 ?>
 
 <!DOCTYPE html>
@@ -159,7 +307,6 @@ $requests = $stmt->get_result();
                         <table class="table table-hover table-bordered align-middle mb-0">
 
                             <thead>
-
                                 <tr>
 
                                     <th>S.N.</th>
@@ -171,9 +318,7 @@ $requests = $stmt->get_result();
                                     <th>Action</th>
 
                                 </tr>
-
                             </thead>
-
 
                             <tbody>
 
@@ -327,7 +472,6 @@ $requests = $stmt->get_result();
                             <?php endif; ?>
 
                             </tbody>
-
                         </table>
 
                     </div>
@@ -342,6 +486,39 @@ $requests = $stmt->get_result();
 
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        markRequestNotificationsRead();
+    });
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    fetch('requests.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'mark_request_notifications_read=1'
+    });
+
+    const sidebarBadge =
+        document.getElementById('sidebar-notification-badge');
+
+    if (sidebarBadge) {
+        sidebarBadge.remove();
+    }
+
+    const headerBadge =
+        document.getElementById('notification-badge');
+
+    if (headerBadge) {
+        headerBadge.remove();
+    }
+
+});
+</script>
 
 <script
     src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js">

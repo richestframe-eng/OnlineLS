@@ -65,11 +65,105 @@ if (
 
 
 // =========================================
+// Validate Full Name
+// =========================================
+if (
+    strlen($full_name) < 2 ||
+    strlen($full_name) > 50 ||
+    !preg_match("/^[a-zA-Z .'-]+$/", $full_name)
+) {
+
+    $_SESSION["error"] =
+        "Full name must contain only letters and be 2-50 characters long.";
+
+    header("Location: students.php");
+    exit();
+}
+
+
+// =========================================
+// Validate Email
+// =========================================
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+    $_SESSION["error"] = "Please enter a valid email address.";
+
+    header("Location: students.php");
+    exit();
+}
+
+
+// =========================================
+// Validate Phone
+// =========================================
+if (!preg_match("/^[0-9]{10}$/", $phone)) {
+
+    $_SESSION["error"] =
+        "Phone number must contain exactly 10 digits.";
+
+    header("Location: students.php");
+    exit();
+}
+
+
+// =========================================
+// Validate Date of Birth
+// =========================================
+$dob_date = DateTime::createFromFormat("Y-m-d", $dob);
+$dob_errors = DateTime::getLastErrors();
+
+if (
+    !$dob_date ||
+    ($dob_errors !== false &&
+        ($dob_errors["warning_count"] > 0 || $dob_errors["error_count"] > 0)) ||
+    $dob_date->format("Y-m-d") !== $dob
+) {
+
+    $_SESSION["error"] = "Please enter a valid date of birth.";
+
+    header("Location: students.php");
+    exit();
+}
+
+if ($dob_date > new DateTime("today")) {
+
+    $_SESSION["error"] = "Date of birth cannot be in the future.";
+
+    header("Location: students.php");
+    exit();
+}
+
+
+// =========================================
+// Validate Semester
+// =========================================
+if ($semester < 1 || $semester > 8) {
+
+    $_SESSION["error"] = "Please select a valid semester.";
+
+    header("Location: students.php");
+    exit();
+}
+
+
+// =========================================
 // Check Password Match
 // =========================================
 if ($password !== $confirm_password) {
 
     $_SESSION["error"] = "Passwords do not match.";
+
+    header("Location: students.php");
+    exit();
+}
+
+
+// =========================================
+// Validate Password Length
+// =========================================
+if (strlen($password) < 6) {
+
+    $_SESSION["error"] = "Password must be at least 6 characters long.";
 
     header("Location: students.php");
     exit();
@@ -87,6 +181,31 @@ $file_extension = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
 if (!in_array($file_extension, $allowed_extensions)) {
 
     $_SESSION["error"] = "Only JPG, JPEG and PNG images are allowed.";
+
+    header("Location: students.php");
+    exit();
+}
+
+
+// =========================================
+// Validate Image Size and Content
+// =========================================
+if ($_FILES["photo"]["size"] > 2 * 1024 * 1024) {
+
+    $_SESSION["error"] = "Student photo must be 2 MB or smaller.";
+
+    header("Location: students.php");
+    exit();
+}
+
+$image_info = @getimagesize($_FILES["photo"]["tmp_name"]);
+
+if (
+    $image_info === false ||
+    !in_array($image_info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)
+) {
+
+    $_SESSION["error"] = "The uploaded file is not a valid JPG, JPEG or PNG image.";
 
     header("Location: students.php");
     exit();

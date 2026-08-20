@@ -3,6 +3,8 @@ require_once '../includes/auth.php';
 requireAdmin();
 require_once '../includes/db.php';
 
+$pageTitle = 'Students';
+
 $sql = "SELECT * FROM student ORDER BY full_name ASC";
 
 $result = $conn->query($sql);
@@ -147,10 +149,10 @@ $result = $conn->query($sql);
                                     <?php
 
                                     $query = "
-    SELECT *
-    FROM student
-    ORDER BY full_name ASC
-";
+                                        SELECT *
+                                        FROM student
+                                        ORDER BY full_name ASC
+                                    ";
 
                                     $result = $conn->query($query);
 
@@ -314,7 +316,7 @@ $result = $conn->query($sql);
                             <div class="col-md-3 text-center">
 
                                 <label class="form-label fw-semibold mb-2">
-                                    Passport Size Photo
+                                    Passport Size Photo <span class="text-danger">*</span>
                                 </label>
 
                                 <div
@@ -358,7 +360,7 @@ $result = $conn->query($sql);
                                     <div class="col-md-6 mb-3">
 
                                         <label class="form-label">
-                                            Full Name
+                                            Full Name <span class="text-danger">*</span>
                                         </label>
 
                                         <input
@@ -373,7 +375,7 @@ $result = $conn->query($sql);
                                     <div class="col-md-6 mb-3">
 
                                         <label class="form-label">
-                                            Email
+                                            Email <span class="text-danger">*</span>
                                         </label>
 
                                         <input
@@ -388,7 +390,7 @@ $result = $conn->query($sql);
                                     <div class="col-md-6 mb-3">
 
                                         <label class="form-label">
-                                            Phone
+                                            Phone <span class="text-danger">*</span>
                                         </label>
 
                                         <input
@@ -403,7 +405,7 @@ $result = $conn->query($sql);
                                     <div class="col-md-6 mb-3">
 
                                         <label for="dob" class="form-label">
-                                            Date of Birth
+                                            Date of Birth <span class="text-danger">*</span>
                                         </label>
 
                                         <input
@@ -418,7 +420,7 @@ $result = $conn->query($sql);
                                     <div class="col-md-6 mb-3">
 
                                         <label for="program" class="form-label">
-                                            Program
+                                            Program <span class="text-danger">*</span>
                                         </label>
 
                                         <select
@@ -451,7 +453,7 @@ $result = $conn->query($sql);
                                     <div class="col-md-6 mb-3">
 
                                         <label for="semester" class="form-label">
-                                            Semester
+                                            Semester <span class="text-danger">*</span>
                                         </label>
 
                                         <select
@@ -488,7 +490,7 @@ $result = $conn->query($sql);
                         <div class="mb-3">
 
                             <label class="form-label">
-                                Address
+                                Address <span class="text-danger">*</span>
                             </label>
 
                             <textarea
@@ -506,30 +508,28 @@ $result = $conn->query($sql);
                             <div class="col-md-6 mb-0">
 
                                 <label class="form-label">
-                                    Password
+                                    Password <span class="text-danger">*</span>
                                 </label>
 
                                 <input
                                     type="password"
                                     class="form-control"
                                     id="password"
-                                    name="password"
-                                    required>
+                                    name="password">
 
                             </div>
 
                             <div class="col-md-6 mb-0">
 
                                 <label class="form-label">
-                                    Confirm Password
+                                    Confirm Password <span class="text-danger">*</span>
                                 </label>
 
                                 <input
                                     type="password"
                                     class="form-control"
                                     id="confirmPassword"
-                                    name="confirm_password"
-                                    required>
+                                    name="confirm_password">
 
                             </div>
 
@@ -574,8 +574,8 @@ $result = $conn->query($sql);
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- ==== JavaScript ==== -->
-     <script src="../assets/js/script.js"></script>
-    <script src="../assets/js/students.js"></script>
+    <script src="../assets/js/script.js"></script>
+    <script src="../assets/js/students.js?v=2"></script>
 
 </body>
 

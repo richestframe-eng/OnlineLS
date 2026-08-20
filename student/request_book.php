@@ -2,8 +2,10 @@
 
 require_once '../includes/auth.php';
 require_once '../includes/db.php';
+require_once '../includes/notification.php';
 
 requireStudent();
+addNotification($conn, 'Admin', 1, 'New book request received.');
 
 
 // ==========================

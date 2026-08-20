@@ -15,3 +15,11 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
+document.querySelectorAll('.return-book').forEach(btn => {
+    btn.onclick = () => {
+        if (confirm('Return this book?')) {
+            location.href = 'return.php?id=' + btn.dataset.id;
+        }
+    };
+});
